@@ -1,0 +1,46 @@
+<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><script src="https://telegram.org/js/telegram-web-app.js"></script><link rel="stylesheet" href="common.css"><title>2048</title></head><body>
+<a class="back" href="index.html">← Меню</a>
+<div class="bar"><div class="stat">Очки<b id="s">0</b></div><div class="stat">Рекорд<b id="b">0</b></div></div>
+<div id="g" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;width:min(100%,360px);aspect-ratio:1;background:var(--panel);padding:8px;border-radius:12px;touch-action:none"></div>
+<div id="m" style="min-height:20px;color:var(--hint)"></div>
+<div class="pad"><span></span><button data-d="2">▲</button><span></span><button data-d="0">◀</button><button data-d="3">▼</button><button data-d="1">▶</button></div>
+<button id="r">Новая игра</button>
+<script src="common.js"></script>
+<script>
+let B,score,best=getBest('2048-best'),done;
+const COL={0:'#343944',2:'#6b7b8c',4:'#5a8fb0',8:'#e08a3c',16:'#e5683f',32:'#e5484f',64:'#d93a5a',128:'#b8962e',256:'#b8962e',512:'#b8962e',1024:'#a8861e',2048:'#c89a0a'};
+function add(){const e=[];B.forEach((v,i)=>v||e.push(i));B[e[Math.random()*e.length|0]]=Math.random()<.9?2:4}
+function start(){B=Array(16).fill(0);score=0;done=false;add();add();render()}
+function slide(a){a=a.filter(Boolean);for(let i=0;i<a.length-1;i++)if(a[i]==a[i+1]){a[i]*=2;score+=a[i];a.splice(i+1,1)}while(a.length<4)a.push(0);return a}
+function move(d){
+  if(done)return;
+  const old=B.join();
+  for(let k=0;k<4;k++){
+    const idx=[0,1,2,3].map(j=>d<2?k*4+j:j*4+k);
+    if(d%2)idx.reverse();
+    const res=slide(idx.map(i=>B[i]));
+    idx.forEach((i,j)=>B[i]=res[j]);
+  }
+  if(B.join()!=old){add();buzz();render()}
+}
+function stuck(){
+  if(B.includes(0))return false;
+  for(let i=0;i<16;i++){if(i%4<3&&B[i]==B[i+1])return false;if(i<12&&B[i]==B[i+4])return false}
+  return true;
+}
+function render(){
+  if(score>best){best=score;setBest('2048-best',best)}
+  s.textContent=score;b.textContent=best;
+  g.innerHTML=B.map(v=>'<div style="background:'+(COL[v]||'#c89a0a')+';border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:'+(v>=1024?20:v>=128?24:28)+'px">'+(v||'')+'</div>').join('');
+  done=stuck();m.textContent=done?'Ходов больше нет':'';
+}
+document.querySelectorAll('.pad button').forEach(k=>k.addEventListener('pointerdown',e=>{e.preventDefault();move(+k.dataset.d)}));
+document.addEventListener('keydown',e=>{const m={ArrowLeft:0,ArrowRight:1,ArrowUp:2,ArrowDown:3};if(e.key in m){e.preventDefault();move(m[e.key])}});
+let tx,ty;
+g.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY});
+g.addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;
+  if(Math.max(Math.abs(dx),Math.abs(dy))<25)return;
+  move(Math.abs(dx)>Math.abs(dy)?(dx<0?0:1):(dy<0?2:3))});
+r.addEventListener('click',start);
+start();
+</script></body></html>

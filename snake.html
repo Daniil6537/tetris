@@ -1,0 +1,37 @@
+<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><script src="https://telegram.org/js/telegram-web-app.js"></script><link rel="stylesheet" href="common.css"><title>Змейка</title></head><body>
+<a class="back" href="index.html">← Меню</a>
+<div class="bar"><div class="stat">Очки<b id="s">0</b></div><div class="stat">Рекорд<b id="b">0</b></div></div>
+<canvas id="c" width="300" height="300" style="width:min(100%,360px);aspect-ratio:1;background:var(--panel);border-radius:10px;touch-action:none"></canvas>
+<div class="pad"><span></span><button data-d="0,-1">▲</button><span></span><button data-d="-1,0">◀</button><button data-d="0,1">▼</button><button data-d="1,0">▶</button></div>
+<button id="r" style="display:none">Играть снова</button>
+<script src="common.js"></script>
+<script>
+const N=15,C=20,ctx=c.getContext('2d');
+let sn,dir,nd,food,score,best=getBest('snake-best'),over,timer;
+function spawnFood(){do{food=[Math.random()*N|0,Math.random()*N|0]}while(sn.some(p=>p[0]==food[0]&&p[1]==food[1]))}
+function upd(){if(score>best){best=score;setBest('snake-best',best)}s.textContent=score;b.textContent=best}
+function turn(d){if(d[0]+dir[0]!==0||d[1]+dir[1]!==0)nd=d}
+function start(){sn=[[7,7],[6,7],[5,7]];dir=nd=[1,0];score=0;over=false;r.style.display='none';spawnFood();upd();clearInterval(timer);timer=setInterval(step,120);draw()}
+function step(){
+  dir=nd;const h=[sn[0][0]+dir[0],sn[0][1]+dir[1]];
+  if(h[0]<0||h[1]<0||h[0]>=N||h[1]>=N||sn.some(p=>p[0]==h[0]&&p[1]==h[1])){over=true;clearInterval(timer);r.style.display='';buzz('heavy');draw();return}
+  sn.unshift(h);
+  if(h[0]==food[0]&&h[1]==food[1]){score++;buzz();spawnFood();upd()}else sn.pop();
+  draw();
+}
+function draw(){
+  ctx.clearRect(0,0,300,300);
+  ctx.fillStyle='#e5584f';ctx.fillRect(food[0]*C+2,food[1]*C+2,C-4,C-4);
+  sn.forEach((p,i)=>{ctx.fillStyle=i?'#58c26a':'#8fe39d';ctx.fillRect(p[0]*C+1,p[1]*C+1,C-2,C-2)});
+  if(over){ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(0,0,300,300);ctx.fillStyle='#fff';ctx.font='bold 24px system-ui';ctx.textAlign='center';ctx.fillText('Игра окончена',150,155)}
+}
+document.querySelectorAll('.pad button').forEach(k=>k.addEventListener('pointerdown',e=>{e.preventDefault();turn(k.dataset.d.split(',').map(Number))}));
+document.addEventListener('keydown',e=>{const m={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0]};if(m[e.key]){e.preventDefault();turn(m[e.key])}});
+let tx,ty;
+c.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY});
+c.addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;
+  if(Math.max(Math.abs(dx),Math.abs(dy))<20)return;
+  turn(Math.abs(dx)>Math.abs(dy)?[Math.sign(dx),0]:[0,Math.sign(dy)])});
+r.addEventListener('click',start);
+start();
+</script></body></html>
